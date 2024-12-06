@@ -1,207 +1,175 @@
 import React, { useState, useEffect } from "react";
+import "./styles/Tamapet.css";
 
-const TIME: number = 2000; // 2 Seconds
-const MAX_FULLNESS: number = 100;
-const MAX_HAPPINESS: number = 100;
-const MAX_ENERGY: number = 100;
+import feedIcon from "./assets/food.png";
+import playIcon from "./assets/play.png";
+import cleanIcon from "./assets/clean.png";
+import medIcon from "./assets/med.png";
+import poopIcon from "./assets/poop.png";
+import tamagotchiDefault from "./assets/happy.png";
 
-type Action = "feed" | "play" | "sleep" | "check";
+const TIME = 2000; // 2 seconds
+const MAX_VALUE = 100;
+
+type Action = "feed" | "play" | "clean" | "medicine";
 
 interface TamaState {
   fullness: number;
   happiness: number;
   energy: number;
-  species: string;
   name: string;
 }
 
-const species = {
-  egg: {
-    fullness: 0,
-    happiness: 0,
-    energy: 0
-  },
-  kitty: {
-    fullness: 30,
-    happiness: 30,
-    energy: 50
-  },
-  whale: {
-    fullness: 10,
-    happiness: 60,
-    energy: 20
-  },
-  mochi: {
-    fullness: 90,
-    happiness: 80,
-    energy: 90
-  }
-};
-
 const initialState: TamaState = {
-  fullness: species.egg.fullness,
-  happiness: species.egg.happiness,
-  energy: species.egg.energy,
-  species: "egg",
-  name: ""
-}
-
-const encodeState = (state: TamaState): string => {
-  const json = JSON.stringify(state);
-  return btoa(json);
-};
-
-const decodeState = (encodedState: string): TamaState => {
-  try {
-    const decoded = atob(encodedState);
-    return JSON.parse(decoded);
-  } catch(error) {
-    console.error("Error when trying to decode pet data: ", error);
-    return { ...initialState };
-  }
+  fullness: 70,
+  happiness: 70,
+  energy: 70,
+  name: "",
 };
 
 const Tamapet: React.FC = () => {
   const [state, setState] = useState<TamaState>(initialState);
+  const [message, setMessage] = useState("");
+  const [showPoop, setShowPoop] = useState(false);
+  const [isNamed, setIsNamed] = useState(false);
 
-  // Checks if there already is data in sessionStorage
-  useEffect(() => { 
-    const storedData = sessionStorage.getItem("tamaState");
-    if (storedData) {
-      const decodedState = decodeState(storedData);
-      setState(decodedState);
-    }
-  }, []);
-
-  // Every time the state changes we update sessionStorage to reflect it
-  useEffect(() => {
-    const encoded = encodeState(state);
-    sessionStorage.setItem("tamaState", encoded);
-  }, [state]);
-
-  // This handles the pet state by decrementing all stats by the set TIME.
+  
   useEffect(() => {
     const interval = setInterval(() => {
-      setState((prevState) => {
-        const newFullness = Math.max(prevState.fullness - 1, 0);
-        const newHappiness = Math.max(prevState.happiness - 1, 0);
-        const newEnergy = Math.max(prevState.energy - 1, 0);
-
-        return {
-          ...prevState,
-          fullness: newFullness,
-          happiness: newHappiness,
-          energy: newEnergy
-        };
-      });
+      setState((prev) => ({
+        ...prev,
+        fullness: Math.max(prev.fullness - 1, 0),
+        happiness: Math.max(prev.happiness - 1, 0),
+        energy: Math.max(prev.energy - 1, 0),
+      }));
     }, TIME);
 
     return () => clearInterval(interval);
   }, []);
 
   const handleAction = (action: Action) => {
-    setState((prevState) => {
-      switch (action) {
-        case "feed":
-          return {
-            ...prevState,
-            fullness: Math.min(prevState.fullness + 20, MAX_FULLNESS),
-            energy: Math.min(prevState.energy + 10, MAX_ENERGY)
-          };
-        case "play":
-          return {
-            ...prevState,
-            happiness: Math.min(prevState.happiness + 20, MAX_HAPPINESS),
-            fullness: Math.max(prevState.fullness - 10, 0),
-            energy: Math.max(prevState.energy - 10, 0)
-          };
-        case "sleep":
-          return {
-            ...prevState,
-            energy: Math.min(prevState.energy + 30, MAX_ENERGY)
-          };
-        case "check":
-          return prevState;
-        default:
-          return prevState;
-      }
-    })
-  }
+    switch (action) {
+      case "feed":
+        setState((prev) => ({
+          ...prev,
+          fullness: Math.min(prev.fullness + 10, MAX_VALUE),
+          energy: Math.min(prev.energy + 5, MAX_VALUE),
+        }));
+        setMessage("Yum! That was delicious!");
+        setShowPoop(true);
+        break;
+      case "play":
+        setState((prev) => ({
+          ...prev,
+          happiness: Math.min(prev.happiness + 15, MAX_VALUE),
+          fullness: Math.max(prev.fullness - 5, 0),
+          energy: Math.max(prev.energy - 5, 0),
+        }));
+        setMessage("Yay! That was fun!");
+        break;
+      case "clean":
+        setShowPoop(false);
+        setMessage("Thank you for cleaning!");
+        break;
+      case "medicine":
+        setState((prev) => ({
+          ...prev,
+          happiness: Math.min(prev.happiness + 10, MAX_VALUE),
+          energy: Math.min(prev.energy + 10, MAX_VALUE),
+        }));
+        setMessage("Feeling better now!");
+        break;
+      default:
+        setMessage("");
+    }
+
+    setTimeout(() => setMessage(""), 3000);
+  };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setState((prevState) => ({
-      ...prevState,
-      name: e.target.value
+    setState((prev) => ({
+      ...prev,
+      name: e.target.value,
     }));
   };
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    setState((prevState) => {
-      const updatedState = { ...prevState, name: prevState.name };
-      const encoded = encodeState(updatedState);
-      sessionStorage.setItem("tamaState", encoded);
-      return updatedState;
-    });
-  };
-
-  const handleSpeciesSelect = (speciesKey: keyof typeof species) => {
-    const selectedSpecies = species[speciesKey];
-    setState((prevState) => ({
-      ...prevState,
-      species: speciesKey,
-      fullness: selectedSpecies.fullness,
-      happiness: selectedSpecies.happiness,
-      energy: selectedSpecies.energy
-    }));
+    setIsNamed(true);
   };
 
   return (
-    <div>
-      <h1>Tamapet: {state.name || "Tamapet not named!"}</h1>
-
-      {!state.species && (
-        <div>
-          <h2>Select a species for your Tamapet!</h2>
-          {Object.keys(species).map((key) => (
-            <button key={key} onClick={() => handleSpeciesSelect(key as keyof typeof species)}>
-              {key.charAt(0).toUpperCase() + key.slice(1)}
-            </button> 
-          ))} 
+    <div className="tamapet-container">
+      {!isNamed ? (
+        <div className="name-pet">
+          <h2>Name Your Tamagotchi</h2>
+          <form onSubmit={handleNameSubmit}>
+            <input
+              type="text"
+              value={state.name}
+              onChange={handleNameChange}
+              placeholder="Enter your pet's name"
+              required
+              className="name-input"
+            />
+            <button type="submit" className="name-submit-button">
+              Save Name
+            </button>
+          </form>
         </div>
+      ) : (
+        <>
+          {/* Sidebar for Actions */}
+          <div className="sidebar">
+            <button className="action-button" onClick={() => handleAction("feed")}>
+              <img src={feedIcon} alt="Feed" />
+            </button>
+            <button className="action-button" onClick={() => handleAction("play")}>
+              <img src={playIcon} alt="Play" />
+            </button>
+            <button className="action-button" onClick={() => handleAction("clean")}>
+              <img src={cleanIcon} alt="Clean" />
+            </button>
+            <button className="action-button" onClick={() => handleAction("medicine")}>
+              <img src={medIcon} alt="Medicine" />
+            </button>
+          </div>
+
+          {/* Main Content */}
+          <div className="main-content">
+            <h1>{state.name || "Your Tamagotchi"}</h1>
+
+            {/* Meters */}
+            <div className="meters">
+              <div className="meter">
+                <p>Fullness</p>
+                <div className="meter-bar">
+                  <div className="meter-fill" style={{ width: `${state.fullness}%` }}></div>
+                </div>
+              </div>
+              <div className="meter">
+                <p>Happiness</p>
+                <div className="meter-bar">
+                  <div className="meter-fill" style={{ width: `${state.happiness}%` }}></div>
+                </div>
+              </div>
+              <div className="meter">
+                <p>Energy</p>
+                <div className="meter-bar">
+                  <div className="meter-fill" style={{ width: `${state.energy}%` }}></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="tama-display">
+              <img src={tamagotchiDefault} alt="Tamagotchi" className="tama-image" />
+              {showPoop && <img src={poopIcon} alt="Poop" className="poop-icon" />}
+            </div>
+
+            {message && <div className="message">{message}</div>}
+          </div>
+        </>
       )}
-
-      {state.species && !state.name && (
-        <form onSubmit={handleNameSubmit}>
-          <input
-            type="text"
-            value={state.name}
-            onChange={handleNameChange}
-            placeholder="Enter a name for your tamapet!"
-            required
-          />
-        </form>
-      )}
-
-      <p>Fullness: {state.fullness}</p>
-      <p>Happiness: {state.happiness}</p>
-      <p>Energy: {state.energy}</p>
-
-      <div>
-        <button onClick={() => handleAction("feed")} disabled={state.fullness === MAX_FULLNESS}>
-          Feed
-        </button>
-        <button onClick={() => handleAction("play")} disabled={state.energy === 0 || state.fullness === 0}>
-          Play
-        </button>
-        <button onClick={() => handleAction("sleep")} disabled={state.energy === MAX_ENERGY}>
-          Sleep
-        </button>
-        <button onClick={() => handleAction("check")}>
-          Status Check
-        </button>
-      </div>
     </div>
   );
 };
