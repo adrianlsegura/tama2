@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./styles/Tamapet.css";
+import "./Tamapet.css";
 
 import feedIcon from "./assets/food.png";
 import playIcon from "./assets/play.png";

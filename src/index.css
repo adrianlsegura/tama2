@@ -1,5 +1,34 @@
-body {
+
+* {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: #ffe6cc; 
+  color: #333;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+p {
+  margin: 0.5rem 0;
+  font-size: 1rem;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #ff6b6b;
 }
