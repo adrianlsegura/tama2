@@ -27,13 +27,50 @@ const initialState: TamaState = {
   name: "",
 };
 
+/* DO NOT REMOVE THESE TWO FUNCTIONS
+ * THEY ARE HELPER FUNCTIONS FOR OUR "DATABASE"
+ */
+
+// Encodes all the JSON data for the pet into base64
+const encodeState = (state: TamaState): string => {
+  const json = JSON.stringify(state);
+  return btoa(json);
+};
+
+// This decodes the base64 data for the pet
+const decodeState = (encodedState: string): TamaState => {
+  try {
+    const decoded = atob(encodedState);
+    return JSON.parse(decoded);
+  } catch(error) {
+    console.error("Error when trying to decode pet data: ", error);
+    return { ...initialState };
+  }
+};
+
 const Tamapet: React.FC = () => {
   const [state, setState] = useState<TamaState>(initialState);
   const [message, setMessage] = useState("");
   const [showPoop, setShowPoop] = useState(false);
   const [isNamed, setIsNamed] = useState(false);
 
-  
+  // DO NOT REMOVE THIS! THIS IS ESSENTIALLY OUR "DATABASE"
+  // Checks if there already is data in sessionStorage
+  useEffect(() => { 
+    const storedData = sessionStorage.getItem("tamaState");
+    if (storedData) {
+      const decodedState = decodeState(storedData);
+      setState(decodedState);
+    }
+  }, []);
+
+  // DO NOT REMOVE THIS! THIS UPDATES OUR "DATABASE"
+  // Every time the state changes we update sessionStorage to reflect it
+  useEffect(() => {
+    const encoded = encodeState(state);
+    sessionStorage.setItem("tamaState", encoded);
+  }, [state]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setState((prev) => ({
